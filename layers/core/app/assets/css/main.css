@@ -1,0 +1,163 @@
+/* layers/core/app/assets/css/main.css
+   The only place design tokens are defined (PRD §9.10). Other layers use the
+   semantic utilities (bg-surface, text-muted, bg-accent…), never raw palette classes. */
+@import "tailwindcss";
+
+/* Scan every layer for class names. */
+@source "../../../..";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  /* §9.10.3 type scale */
+  --text-display: 2rem;      --text-display--line-height: 2.5rem;  --text-display--letter-spacing: -0.02em;
+  --text-title: 1.5rem;      --text-title--line-height: 2rem;      --text-title--letter-spacing: -0.01em;
+  --text-headline: 1.0625rem; --text-headline--line-height: 1.5rem;
+  --text-body: 0.9375rem;    --text-body--line-height: 1.5rem;
+  --text-callout: 0.875rem;  --text-callout--line-height: 1.25rem;
+  --text-footnote: 0.8125rem; --text-footnote--line-height: 1.125rem;
+  --text-caption: 0.75rem;   --text-caption--line-height: 1rem;
+  --text-code: 0.8125rem;    --text-code--line-height: 1.25rem;
+
+  /* §9.10.4 shape */
+  --radius-control: 0.5rem;
+  --radius-card: 0.75rem;
+  --radius-panel: 1.25rem;
+
+  /* §9.10.1 calm motion: 150–250 ms, no bounce on content */
+  --ease-standard: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 250ms;
+
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-fade-in: fade-in var(--duration-base) var(--ease-standard) both;
+
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+/* §9.10.2 semantic colour tokens — light */
+:root {
+  --mc-canvas: #f5f9f8;
+  --mc-surface: #ffffff;
+  --mc-inset: #ecf4f2;
+  --mc-raised: #ffffff;
+  --mc-border: #dce8e6;
+  --mc-text: #0b1f22;
+  --mc-muted: #4b6366;
+  --mc-accent: #0f766e;
+  --mc-accent-hover: #115e59;
+  --mc-on-accent: #ffffff;
+  --mc-accent-text: #0f766e;
+  --mc-focus: #0d9488;
+  --mc-danger: #be123c;
+  --mc-warning: #92400e;
+  --mc-success: #0f766e;
+  --mc-header: rgb(245 249 248 / 0.8);
+  --mc-shadow-sm: 0 1px 2px rgb(11 31 34 / 0.06), 0 1px 3px rgb(11 31 34 / 0.08);
+  --mc-shadow-lg: 0 8px 24px rgb(11 31 34 / 0.12), 0 2px 6px rgb(11 31 34 / 0.06);
+  color-scheme: light;
+}
+
+/* dark — v1 surfaces carried over */
+.dark {
+  --mc-canvas: #002029;
+  --mc-surface: #001c23;
+  --mc-inset: #020d0f;
+  --mc-raised: #06303a;
+  --mc-border: rgb(255 255 255 / 0.08);
+  --mc-text: #e6f4f1;
+  --mc-muted: #8fa9a8;
+  --mc-accent: #14b8a6;
+  --mc-accent-hover: #2dd4bf;
+  --mc-on-accent: #002029;
+  --mc-accent-text: #5eead4;
+  --mc-focus: #2dd4bf;
+  --mc-danger: #fb7185;
+  --mc-warning: #fbbf24;
+  --mc-success: #5eead4;
+  --mc-header: rgb(0 32 41 / 0.8);
+  /* Dark mode uses lighter surfaces plus hairlines instead of shadows (§9.10.4). */
+  --mc-shadow-sm: 0 0 0 1px var(--mc-border);
+  --mc-shadow-lg: 0 0 0 1px var(--mc-border);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-canvas: var(--mc-canvas);
+  --color-surface: var(--mc-surface);
+  --color-inset: var(--mc-inset);
+  --color-raised: var(--mc-raised);
+  --color-line: var(--mc-border);
+  --color-fg: var(--mc-text);
+  --color-muted: var(--mc-muted);
+  --color-accent: var(--mc-accent);
+  --color-accent-hover: var(--mc-accent-hover);
+  --color-on-accent: var(--mc-on-accent);
+  --color-accent-text: var(--mc-accent-text);
+  --color-focus: var(--mc-focus);
+  --color-danger: var(--mc-danger);
+  --color-warning: var(--mc-warning);
+  --color-success: var(--mc-success);
+  --color-header: var(--mc-header);
+  --shadow-card: var(--mc-shadow-sm);
+  --shadow-float: var(--mc-shadow-lg);
+}
+
+@layer base {
+  html {
+    background-color: var(--color-canvas);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-size: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    min-height: 100dvh;
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    transition:
+      background-color var(--duration-base) var(--ease-standard),
+      color var(--duration-base) var(--ease-standard);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--color-accent) 25%, transparent);
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* §9.8 / §9.10.1: one global switch for reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

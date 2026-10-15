@@ -1,0 +1,44 @@
+{
+  "name": "metacheck",
+  "version": "2.0.0-alpha.0",
+  "private": true,
+  "type": "module",
+  "description": "Preview, audit and generate the meta tags behind link previews.",
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
+  },
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck",
+    "test": "vitest run",
+    "test:layer": "vitest run --dir",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@nuxt/fonts": "^1.0.1",
+    "@nuxt/icon": "^2.5.1",
+    "@nuxtjs/color-mode": "^4.0.1",
+    "nuxt": "4.6.1",
+    "reka-ui": "^2.11.0",
+    "tailwindcss": "^4.3.3",
+    "@tailwindcss/vite": "^4.3.3",
+    "vue": "^3.5.43"
+  },
+  "devDependencies": {
+    "@iconify-json/lucide": "^1.2.144",
+    "@iconify-json/simple-icons": "^1.2.0",
+    "@nuxt/eslint": "^1.17.0",
+    "@nuxt/test-utils": "^4.3.3",
+    "@vue/test-utils": "^2.5.1",
+    "eslint": "^10.12.0",
+    "happy-dom": "^21.0.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.11",
+    "vue-tsc": "^3.3.13"
+  }
+}

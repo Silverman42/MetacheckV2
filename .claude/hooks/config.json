@@ -1,0 +1,34 @@
+{
+  "requiredSkills": [
+    { "label": "Apple Design", "match": "apple[-_ ]?design" },
+    { "label": "Taste UI", "match": "taste" }
+  ],
+  "moduleExtensions": [".vue", ".ts", ".tsx", ".js", ".mjs", ".css"],
+  "layerPattern": "^layers/[a-z0-9][a-z0-9-]*/",
+  "allowedOutsideLayers": [
+    "^[^/]+\\.config\\.(ts|mts|js|mjs|cjs)$",
+    "^app\\.config\\.ts$",
+    "^tests?/",
+    "^e2e/",
+    "^scripts/",
+    "^types/.*\\.d\\.ts$",
+    "^public/",
+    "^\\.claude/",
+    "^node_modules/",
+    "^\\.nuxt/",
+    "^\\.output/",
+    "^\\.netlify/"
+  ],
+  "animation": {
+    "maxDurationMs": 400
+  },
+  "lighthouse": {
+    "minScore": 90,
+    "categories": ["performance", "accessibility", "best-practices", "seo"],
+    "paths": ["/"],
+    "formFactor": "mobile",
+    "lighthouseVersion": "12.6.0",
+    "watch": ["layers", "app", "server", "shared", "public", "nuxt.config.ts", "app.config.ts", "package.json"],
+    "maxConsecutiveBlocks": 3
+  }
+}
