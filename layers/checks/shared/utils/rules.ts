@@ -177,17 +177,38 @@ export function runChecks(ctx: CheckContext): CheckResult[] {
   return RULES.map(({ run, ...rule }) => ({ ...rule, ...run(ctx) }))
 }
 
+/** Errors count three times as much as warnings in scores (FR-5.4). */
+const WEIGHT: Record<CheckSeverity, number> = { error: 3, warning: 1 }
+
+/** 0–100, or null when nothing applies. */
+export function score(results: CheckResult[]) {
+  const counted = results.filter(r => r.status !== 'skip')
+  const total = counted.reduce((sum, r) => sum + WEIGHT[r.severity], 0)
+  if (!total) return null
+  const passed = counted.filter(r => r.status === 'pass').reduce((sum, r) => sum + WEIGHT[r.severity], 0)
+  return Math.round((passed / total) * 100)
+}
+
+export type Grade = 'good' | 'fair' | 'poor'
+
+export function grade(value: number | null): Grade | null {
+  if (value === null) return null
+  return value >= 90 ? 'good' : value >= 60 ? 'fair' : 'poor'
+}
+
 export function summarize(results: CheckResult[]) {
   const failed = (severity: CheckSeverity) => results.filter(r => r.status === 'fail' && r.severity === severity)
-  const score = (category: CheckCategory) => {
-    const counted = results.filter(r => r.category === category && r.status !== 'skip')
-    return counted.length ? Math.round((counted.filter(r => r.status === 'pass').length / counted.length) * 100) : null
-  }
+  const overall = score(results)
   return {
     errors: failed('error'),
     warnings: failed('warning'),
     passed: results.filter(r => r.status === 'pass'),
     skipped: results.filter(r => r.status === 'skip'),
-    scores: { search: score('search'), social: score('social') },
+    scores: {
+      search: score(results.filter(r => r.category === 'search')),
+      social: score(results.filter(r => r.category === 'social')),
+    },
+    overall,
+    grade: grade(overall),
   }
 }

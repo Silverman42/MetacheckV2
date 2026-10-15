@@ -44,15 +44,26 @@ const server = createServer((req, res) => {
     return setTimeout(() => res.end('<html><head></head></html>'), 2000)
   }
   if (path === '/huge') {
-    // Head first, then an endless body: reading must stop at </head>.
+    // Head first, then a 20 MB body: reading must stop at the byte cap.
     res.setHeader('content-type', 'text/html')
     res.write('<html><head><title>Big</title></head><body>')
-    const timer = setInterval(() => {
-      bodyBytesSent += 65536
-      if (!res.write('x'.repeat(65536)) || bodyBytesSent > 20_000_000) clearInterval(timer)
-    }, 1)
-    res.on('close', () => clearInterval(timer))
+    let closed = false
+    res.on('close', () => (closed = true))
+    const pump = () => {
+      while (!closed && bodyBytesSent < 20_000_000) {
+        bodyBytesSent += 65536
+        if (!res.write('x'.repeat(65536))) return res.once('drain', pump)
+      }
+      res.end()
+    }
+    pump()
     return
+  }
+  if (path === '/jsonld') {
+    res.setHeader('content-type', 'text/html')
+    return res.end(`<html><head><script type="application/ld+json">{"@type":"WebSite"}</script></head>
+      <body><svg><title>Icon</title></svg><meta property="og:title" content="ignored">
+      <script type="application/ld+json">{"@type":"Article"}</script></body></html>`)
   }
   if (path === '/latin1') {
     res.setHeader('content-type', 'text/html; charset=iso-8859-1')
@@ -106,10 +117,15 @@ describe('extractPage', () => {
     expect(await failure(extractPage(`${base}/slow`, { ...options, pageTimeoutMs: 200 }))).toMatchObject({ code: 'TIMEOUT', statusCode: 504 })
   })
 
-  it('stops reading at the end of <head>', async () => {
+  it('stops reading at the byte cap', async () => {
     const result = await extractPage(`${base}/huge`, options)
     expect(result.title).toBe('Big')
     expect(bodyBytesSent).toBeLessThan(5_000_000)
+  })
+
+  it('finds JSON-LD in the body', async () => {
+    const result = await extractPage(`${base}/jsonld`, options)
+    expect(result.jsonLd.map(b => (b.parsed as { '@type': string })['@type'])).toEqual(['WebSite', 'Article'])
   })
 
   it('decodes the declared charset', async () => {

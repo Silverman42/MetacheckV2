@@ -30,8 +30,9 @@ export function isAbsoluteUrl(href: string) {
 }
 
 /**
- * Parse the <head> of an HTML document (FR-2.1–2.5). Stops at <body>, so a truncated document
- * is fine. Scraped values are returned as plain strings and must be rendered as text only.
+ * Parse an HTML document (FR-2.1–2.5): every tag in <head>, plus JSON-LD blocks anywhere, since
+ * most sites put structured data in <body>. A truncated document is fine. Scraped values are
+ * returned as plain strings and must be rendered as text only.
  */
 export function parseHead(html: string, baseUrl: string): ParsedHead {
   const result: ParsedHead = { lang: null, title: null, meta: [], links: [], jsonLd: [] }
@@ -39,18 +40,21 @@ export function parseHead(html: string, baseUrl: string): ParsedHead {
   let inTitle = false
   let titleText = ''
   let jsonLdText: string | null = null
-  let done = false
+  // After </head> (or <body>), only JSON-LD is collected.
+  let inBody = false
 
   const parser = new Parser({
     onopentag(name, attrs) {
-      if (done) return
+      if (inBody) {
+        if (name === 'script' && attrs.type?.trim().toLowerCase() === 'application/ld+json') jsonLdText = ''
+        return
+      }
       switch (name) {
         case 'html':
           result.lang = attrs.lang?.trim() || null
           break
         case 'body':
-          done = true
-          parser.pause()
+          inBody = true
           break
         case 'base':
           if (attrs.href) base = resolveUrl(attrs.href, baseUrl) ?? base
@@ -105,14 +109,13 @@ export function parseHead(html: string, baseUrl: string): ParsedHead {
         jsonLdText = null
       }
       else if (name === 'head') {
-        done = true
-        parser.pause()
+        inBody = true
       }
     },
   }, { decodeEntities: true, lowerCaseTags: true, lowerCaseAttributeNames: true })
 
   parser.write(html)
-  if (!done) parser.end()
+  parser.end()
   return result
 }
 

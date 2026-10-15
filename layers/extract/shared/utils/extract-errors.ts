@@ -12,6 +12,7 @@ export const EXTRACT_ERROR_TITLES: Record<ExtractErrorCode, string> = {
   UPSTREAM_ERROR: 'We couldn’t reach that site',
   RATE_LIMITED: 'Too many checks',
   FORBIDDEN: 'Request not allowed',
+  RENDER_UNAVAILABLE: 'JavaScript rendering isn’t available',
 }
 
 /** Codes where trying again might help, so the UI offers a Retry action. */

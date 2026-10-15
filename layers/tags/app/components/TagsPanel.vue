@@ -5,6 +5,11 @@ import { filterTags, rawTags, type RawTag } from '#layers/tags/shared/utils/raw-
 const { source } = useMetaState()
 const { show } = useToast()
 const query = ref('')
+const section = useState<'tags' | 'jsonld'>('mc-tags-section', () => 'tags')
+const sections = computed(() => [
+  { value: 'tags' as const, label: 'All tags' },
+  { value: 'jsonld' as const, label: `Structured data${source.value?.jsonLd.length ? ` (${source.value.jsonLd.length})` : ''}` },
+])
 
 const rows = computed(() => (source.value ? rawTags(source.value) : []))
 const visible = computed(() => filterTags(rows.value, query.value))
@@ -42,6 +47,11 @@ const kindIcon = { 'title': 'lucide:heading', 'meta': 'lucide:tag', 'link': 'luc
       Check a URL to see every tag its page ships.
     </div>
     <template v-else>
+      <CoreSegmentedControl v-model="section" :options="sections" label="Tags section" size="sm" class="self-start" />
+    </template>
+    <Transition v-if="source" name="tags-section" mode="out-in">
+      <TagsJsonLd v-if="section === 'jsonld'" key="jsonld" />
+      <div v-else key="tags" class="flex flex-col gap-4">
       <div class="flex flex-wrap items-center gap-3">
         <div class="relative min-w-0 flex-1 basis-60">
           <Icon name="lucide:search" class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" aria-hidden="true" />
@@ -95,11 +105,20 @@ const kindIcon = { 'title': 'lucide:heading', 'meta': 'lucide:tag', 'link': 'luc
           </li>
         </TransitionGroup>
       </div>
-    </template>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <style scoped>
+.tags-section-enter-active,
+.tags-section-leave-active {
+  transition: opacity var(--duration-fast) var(--ease-standard);
+}
+.tags-section-enter-from,
+.tags-section-leave-to {
+  opacity: 0;
+}
 .tags-row-enter-active,
 .tags-row-leave-active {
   transition: opacity var(--duration-fast) var(--ease-standard);

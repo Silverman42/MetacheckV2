@@ -14,6 +14,13 @@ export default defineNuxtConfig({
       maxImages: 4,
       // Requests per minute per IP (§9.4).
       rateLimit: 30,
+      // FR-1.7: a Browserless-compatible rendering service. Off unless a URL is set
+      // (NUXT_EXTRACT_RENDERER_URL, NUXT_EXTRACT_RENDERER_TOKEN).
+      renderer: { url: '', token: '', timeoutMs: 8000 },
+    },
+    public: {
+      // Shows the "Render JavaScript" option; set NUXT_PUBLIC_JS_RENDERING=true with the renderer.
+      jsRendering: false,
     },
   },
 

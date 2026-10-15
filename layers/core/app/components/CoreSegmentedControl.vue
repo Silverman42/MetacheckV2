@@ -3,7 +3,8 @@ import { TabsIndicator, TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 
 // §9.10.6: pill track, sliding selection indicator, ARIA tabs semantics and keyboard support.
 defineProps<{
-  options: { value: T, label: string, icon?: string, badge?: number, class?: string }[]
+  /** `shortcut` is announced to assistive tech (aria-keyshortcuts) and shown in the tooltip. */
+  options: { value: T, label: string, icon?: string, badge?: number, class?: string, shortcut?: string }[]
   label: string
   size?: 'sm' | 'md'
   iconOnly?: boolean
@@ -26,7 +27,8 @@ const model = defineModel<T>({ required: true })
         :key="option.value"
         :value="option.value"
         :aria-label="iconOnly ? option.label : undefined"
-        :title="iconOnly ? option.label : undefined"
+        :aria-keyshortcuts="option.shortcut"
+        :title="iconOnly || option.shortcut ? `${option.label}${option.shortcut ? ` (${option.shortcut})` : ''}` : undefined"
         :class="[
           option.class,
           'relative z-10 inline-flex items-center justify-center gap-1.5 rounded-full font-medium',

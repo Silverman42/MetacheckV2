@@ -13,11 +13,11 @@ export interface ExtractOptions {
 }
 
 const HTML_TYPES = ['text/html', 'application/xhtml+xml']
-const HEAD_END = /<\/head\s*>|<body[\s>]/i
+const DOC_END = /<\/html\s*>/i
 
 /**
- * Plain fetch + parse of the document head (PRD §9.2): what social crawlers see, since they
- * don't run JavaScript. Stops reading at </head> or the byte cap.
+ * Plain fetch + parse (PRD §9.2): what social crawlers see, since they don't run JavaScript.
+ * Reads the whole document up to the byte cap, so JSON-LD in <body> is found too.
  */
 export async function extractPage(url: string, options: ExtractOptions): Promise<ExtractResponse> {
   const started = performance.now()
@@ -41,7 +41,7 @@ export async function extractPage(url: string, options: ExtractOptions): Promise
     throw new ExtractFailure('NOT_HTML', 422, `That URL returns ${contentType}, not a web page.`)
   }
 
-  // Look for the end of <head> across chunk boundaries with a small rolling window.
+  // Look for </html> across chunk boundaries with a small rolling window.
   let tail = ''
   const latin1 = new TextDecoder('latin1')
   let body: Awaited<ReturnType<typeof readLimited>>
@@ -49,7 +49,7 @@ export async function extractPage(url: string, options: ExtractOptions): Promise
     body = await readLimited(response, options.maxHtmlBytes, (chunk) => {
       const text = tail + latin1.decode(chunk)
       tail = text.slice(-16)
-      return HEAD_END.test(text)
+      return DOC_END.test(text)
     })
   }
   catch {

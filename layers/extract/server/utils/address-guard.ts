@@ -63,3 +63,26 @@ export class BlockedAddressError extends Error {
     super(`${hostname} resolves to a private or reserved address`)
   }
 }
+
+/**
+ * Resolve a hostname and require every address to be public. Used before handing a URL to the
+ * rendering service, which connects from its own network where our socket guard can't apply.
+ */
+export async function assertPublicHost(hostname: string) {
+  const host = hostname.replace(/^\[|\]$/g, '')
+  if (ipaddr.isValid(host)) {
+    if (!isPublicAddress(host)) throw new ExtractFailure('BLOCKED_ADDRESS', 400, 'Private, local and reserved addresses can’t be checked.')
+    return
+  }
+  const { lookup } = await import('node:dns/promises')
+  let addresses: LookupAddress[]
+  try {
+    addresses = await lookup(host, { all: true })
+  }
+  catch {
+    throw new ExtractFailure('DNS_ERROR', 502, 'The domain doesn’t resolve. Check the spelling.')
+  }
+  if (!addresses.length || addresses.some(a => !isPublicAddress(a.address))) {
+    throw new ExtractFailure('BLOCKED_ADDRESS', 400, 'That site points to a private or reserved address, so it can’t be checked.')
+  }
+}

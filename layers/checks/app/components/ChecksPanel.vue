@@ -22,8 +22,9 @@ const scoreTone = (score: number | null) =>
     <h2 class="sr-only">
       Checks
     </h2>
-    <div class="flex flex-wrap items-center gap-3">
-      <p class="flex-1 text-callout text-muted">
+    <div class="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-panel bg-surface p-4 shadow-card md:p-5">
+      <ChecksScore :value="summary.overall" :grade="summary.grade" />
+      <p class="min-w-0 flex-1 basis-48 text-callout text-muted">
         <Transition name="checks-fade" mode="out-in">
           <span :key="mode">{{ modeNote }}</span>
         </Transition>
@@ -32,7 +33,7 @@ const scoreTone = (score: number | null) =>
         <div
           v-for="category in (['search', 'social'] as const)"
           :key="category"
-          class="flex items-center gap-2 rounded-full bg-surface px-3 py-1.5 shadow-card"
+          class="flex items-center gap-2 rounded-full bg-inset px-3 py-1.5"
         >
           <span class="text-footnote text-muted capitalize">{{ category }}</span>
           <span :class="['tabular text-footnote font-semibold transition-colors duration-[var(--duration-base)]', scoreTone(summary.scores[category])]">

@@ -2,6 +2,7 @@ import * as v from 'valibot'
 import { normalizeTargetUrl } from '../../shared/utils/target-url'
 import { isAllowedCaller } from '../utils/caller-guard'
 import { extractPage, type ExtractOptions } from '../utils/extract-page'
+import { extractRendered, type RendererConfig } from '../utils/render-page'
 import { ExtractFailure } from '../utils/extract-failure'
 
 // GET /api/extract?url= — internal to the MetaCheck UI, not a public API (PRD §9.3, decision D7).
@@ -9,19 +10,22 @@ import { ExtractFailure } from '../utils/extract-failure'
 const Query = v.object({
   url: v.pipe(v.string('Enter a URL to check.'), v.trim(), v.minLength(1, 'Enter a URL to check.'), v.maxLength(2048, 'That URL is too long.')),
   refresh: v.optional(v.picklist(['1'])),
+  render: v.optional(v.picklist(['1'])),
 })
 
 // §9.5: successful extractions are cached per normalised URL; ?refresh=1 fetches again.
 // Failures throw, so they are never cached.
+type Options = ExtractOptions & { renderer?: RendererConfig }
 const cachedExtract = defineCachedFunction(
-  (url: string, options: ExtractOptions, _refresh: boolean) => extractPage(url, options),
+  (url: string, options: Options, _refresh: boolean) =>
+    options.renderer ? extractRendered(url, { ...options, renderer: options.renderer }) : extractPage(url, options),
   {
     name: 'extract',
     maxAge: 600,
     // Serve fresh data on Refresh and after expiry, not a stale copy (Nitro defaults to SWR).
     swr: false,
-    getKey: (url: string) => url,
-    shouldInvalidateCache: (_url: string, _options: ExtractOptions, refresh: boolean) => refresh,
+    getKey: (url: string, options: Options) => (options.renderer ? `js:${url}` : url),
+    shouldInvalidateCache: (_url: string, _options: Options, refresh: boolean) => refresh,
   },
 )
 
@@ -49,11 +53,19 @@ export default defineEventHandler(async (event) => {
     const target = normalizeTargetUrl(query.output.url)
     if (!target.ok) throw new ExtractFailure('INVALID_URL', 400, target.reason)
 
+    let renderer: RendererConfig | undefined
+    if (query.output.render === '1') {
+      const { url, token, timeoutMs } = config.extract.renderer
+      if (!url) throw new ExtractFailure('RENDER_UNAVAILABLE', 501, 'JavaScript rendering isn’t set up on this server.')
+      renderer = { url, token, timeoutMs }
+    }
+
     return await cachedExtract(target.url, {
       pageTimeoutMs: config.extract.pageTimeoutMs,
       probeTimeoutMs: config.extract.probeTimeoutMs,
       maxHtmlBytes: config.extract.maxHtmlBytes,
       maxImages: config.extract.maxImages,
+      renderer,
     }, query.output.refresh === '1')
   }
   catch (error) {

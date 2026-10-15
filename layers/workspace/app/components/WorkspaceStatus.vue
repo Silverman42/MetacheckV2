@@ -3,7 +3,8 @@ import { EXTRACT_ERROR_TITLES, RETRYABLE_EXTRACT_ERRORS } from '#layers/extract/
 
 // What the workspace is showing: the fetched page (FR-1.4, FR-2.8), the demo, scratch mode,
 // a lookup in progress, or an error with Retry (FR-1.3).
-const emit = defineEmits<{ retry: [], refresh: [], scratch: [], pick: [url: string] }>()
+const emit = defineEmits<{ retry: [], refresh: [], scratch: [], pick: [url: string], render: [on: boolean] }>()
+const { public: { jsRendering } } = useRuntimeConfig()
 const { mode, recent, clearRecent } = useWorkspace()
 const { pending, error } = useExtract()
 const { source } = useMetaState()
@@ -58,6 +59,12 @@ const display = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$/, 
           <Icon name="lucide:chevron-down" :class="['size-3.5 transition-transform duration-[var(--duration-base)]', redirectsOpen && 'rotate-180']" aria-hidden="true" />
         </button>
         <span class="flex-1" />
+        <CoreSwitch
+          v-if="jsRendering"
+          :model-value="!!source.rendering"
+          label="Render JavaScript"
+          @update:model-value="emit('render', $event)"
+        />
         <CoreButton size="sm" variant="ghost" icon="lucide:refresh-cw" @click="emit('refresh')">
           Refresh
         </CoreButton>
@@ -73,6 +80,7 @@ const display = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$/, 
             </li>
           </ol>
         </Transition>
+        <WorkspaceRenderNote v-if="source.rendering" :rendering="source.rendering" class="basis-full" />
       </div>
 
       <div v-else key="intro" class="flex flex-wrap items-center gap-x-3 gap-y-2 text-callout text-muted">

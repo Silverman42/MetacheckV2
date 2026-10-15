@@ -741,6 +741,10 @@ All questions from rev. 1 are resolved (2026-10-15).
 | D17 | Extraction cache | Nitro cached function keyed by normalised URL, 10-minute TTL, no stale-while-revalidate; Netlify Blobs on Netlify, default storage elsewhere. No CDN caching of the API. | Refresh must return fresh data; CDN caching would bypass the same-origin check (D7). |
 | D18 | Rate limit | 30 requests/minute per IP, in-memory sliding window per instance; in-process SSR calls are exempt. | A burst bound that needs no extra service; platform-level limits remain the hard cap (§9.4). |
 | D19 | Test runner | Vitest 4.1 (not 5) with `@nuxt/test-utils` 4.3. | Component tests fail to load under Vitest 5 with the current test-utils. |
+| D20 | Reading the body | Extraction reads the whole document up to the 1.5 MB cap (not just `<head>`), collecting only JSON-LD from `<body>`. Supersedes "stop after `</head>`" in §9.2. | Most sites put JSON-LD in the body; the structured data view would otherwise be empty. |
+| D21 | JavaScript rendering | A Browserless-compatible `/content` service, configured with `NUXT_EXTRACT_RENDERER_URL` / `NUXT_EXTRACT_RENDERER_TOKEN` and shown in the UI with `NUXT_PUBLIC_JS_RENDERING=true`; off by default (501 `RENDER_UNAVAILABLE`). The plain fetch runs alongside, and the response lists tags JavaScript added, changed or removed, limited to tags that shape previews and search. The host is DNS-checked before rendering because the service fetches from its own network. Requested with `render=1`; cached separately. | FR-1.7 without running Chromium in the function (§9.2); the diff is the useful part, since platforms don't run JavaScript. |
+| D22 | Scores | Errors weigh 3, warnings 1; skipped checks don't count. Overall score with a grade: 90+ good, 60–89 fair, below 60 poor. | FR-5.4: one missing image should outweigh several length warnings. |
+| D23 | Keyboard shortcuts | `/` and ⌘K focus the URL; `1`–`4` switch views; `E` shows the editor; `C` copies the code in the selected format; `?` lists shortcuts. Ignored while typing or in a dialog; announced with `aria-keyshortcuts`. | FR-8.5 with single keys that never clash with typing. |
 
 ---
 

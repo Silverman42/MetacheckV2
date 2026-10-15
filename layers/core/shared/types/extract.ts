@@ -53,6 +53,17 @@ export interface ExtractResponse {
   links: ExtractedLink[]
   jsonLd: ExtractedJsonLd[]
   images: ExtractedImage[]
+  /**
+   * Present when the page was rendered with JavaScript (FR-1.7). Lists the tags that differ from
+   * the plain HTML that social platforms see, as "name" or "property" keys.
+   */
+  rendering?: ExtractRendering
+}
+
+export interface ExtractRendering {
+  added: string[]
+  changed: string[]
+  removed: string[]
 }
 
 export type ExtractErrorCode =
@@ -66,6 +77,7 @@ export type ExtractErrorCode =
   | 'UPSTREAM_ERROR'
   | 'RATE_LIMITED'
   | 'FORBIDDEN'
+  | 'RENDER_UNAVAILABLE'
 
 export interface ExtractError {
   statusCode: number

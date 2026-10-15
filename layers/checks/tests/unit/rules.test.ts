@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ExtractResponse } from '#layers/core/shared/types/extract'
 import { createEmptyMeta } from '#layers/core/shared/utils/meta'
-import { contextTags, RULES, runChecks, summarize, type CheckContext, type ImageFacts } from '../../shared/utils/rules'
+import { contextTags, grade, RULES, runChecks, score, summarize, type CheckContext, type CheckResult, type ImageFacts } from '../../shared/utils/rules'
 
 function goodValues() {
   const v = createEmptyMeta()
@@ -102,3 +102,23 @@ describe('rules', () => {
 function results(list: ReturnType<typeof runChecks>, id: string) {
   return list.find(r => r.id === id)?.detail
 }
+
+describe('scores (FR-5.4)', () => {
+  const result = (severity: 'error' | 'warning', status: 'pass' | 'fail' | 'skip') => ({ severity, status } as CheckResult)
+
+  it('weights errors three times as much as warnings and ignores skipped checks', () => {
+    expect(score([result('error', 'pass'), result('warning', 'fail')])).toBe(75)
+    expect(score([result('error', 'fail'), result('warning', 'pass')])).toBe(25)
+    expect(score([result('warning', 'skip')])).toBeNull()
+  })
+
+  it('grades the score', () => {
+    expect([grade(95), grade(70), grade(30), grade(null)]).toEqual(['good', 'fair', 'poor', null])
+  })
+
+  it('summarize includes the overall score and grade', () => {
+    const s = summarize(runChecks(ctx({ mode: 'draft', values: createEmptyMeta() })))
+    expect(s.overall).toBeLessThan(60)
+    expect(s.grade).toBe('poor')
+  })
+})

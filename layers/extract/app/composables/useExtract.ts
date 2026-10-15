@@ -12,6 +12,7 @@ export function useExtract() {
   const pending = useState('mc-extract-pending', () => false)
   const error = useState<ExtractError | null>('mc-extract-error', () => null)
   const lastUrl = useState<string | null>('mc-extract-url', () => null)
+  const lastRender = useState('mc-extract-render', () => false)
 
   // Read the private token now: the Nuxt context isn't available after an await.
   const headers: Record<string, string> = {}
@@ -19,8 +20,8 @@ export function useExtract() {
 
   let latest = 0
 
-  /** `refresh` skips the server's short-lived cache. */
-  async function extract(input: string, options: { refresh?: boolean } = {}): Promise<ExtractResponse | null> {
+  /** `refresh` skips the server's short-lived cache; `render` runs the page's JavaScript (FR-1.7). */
+  async function extract(input: string, options: { refresh?: boolean, render?: boolean } = {}): Promise<ExtractResponse | null> {
     const target = normalizeTargetUrl(input)
     if (!target.ok) {
       error.value = { statusCode: 400, code: 'INVALID_URL', message: target.reason }
@@ -31,8 +32,11 @@ export function useExtract() {
     pending.value = true
     error.value = null
     lastUrl.value = target.url
+    lastRender.value = !!options.render
     try {
-      const query = options.refresh ? { url: target.url, refresh: '1' } : { url: target.url }
+      const query: Record<string, string> = { url: target.url }
+      if (options.refresh) query.refresh = '1'
+      if (options.render) query.render = '1'
       const response = await $fetch<ExtractResponse>('/api/extract', { query, headers })
       if (request !== latest) return null // a newer lookup started; drop this one
       meta.load(toMetaValues(response), response)
@@ -53,7 +57,7 @@ export function useExtract() {
 
   /** Run the last lookup again (the Retry action). */
   function retry(options: { refresh?: boolean } = {}) {
-    return lastUrl.value ? extract(lastUrl.value, options) : Promise.resolve(null)
+    return lastUrl.value ? extract(lastUrl.value, { render: lastRender.value, ...options }) : Promise.resolve(null)
   }
 
   return {
@@ -62,5 +66,6 @@ export function useExtract() {
     pending: readonly(pending),
     error: readonly(error),
     lastUrl: readonly(lastUrl),
+    lastRender: readonly(lastRender),
   }
 }

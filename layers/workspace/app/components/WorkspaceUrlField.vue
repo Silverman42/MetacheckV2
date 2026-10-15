@@ -10,7 +10,7 @@ const input = useTemplateRef<HTMLInputElement>('input')
 const isMac = ref(false)
 
 function onKeydown(event: KeyboardEvent) {
-  const target = event.target as HTMLElement | null
+  const target = event.target instanceof Element ? event.target : null
   const typing = target?.closest('input, textarea, select, [contenteditable="true"]')
   if ((event.key === '/' && !typing) || (event.key.toLowerCase() === 'k' && (event.metaKey || event.ctrlKey))) {
     event.preventDefault()

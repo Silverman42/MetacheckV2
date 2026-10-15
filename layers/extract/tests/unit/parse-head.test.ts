@@ -37,6 +37,13 @@ describe('parseHead', () => {
     expect(head.jsonLd[1]!.parsed).toBeUndefined()
   })
 
+  it('collects JSON-LD from the body but no other body tags', () => {
+    const doc = parseHead('<html><head><title>T</title></head><body><svg><title>x</title></svg><meta name="a" content="b"><script type="application/ld+json">{"@type":"Thing"}</script></body></html>', page)
+    expect(doc.title).toBe('T')
+    expect(doc.meta).toHaveLength(0)
+    expect(doc.jsonLd[0]!.parsed).toEqual({ '@type': 'Thing' })
+  })
+
   it('returns a null title instead of failing when there is none (fixes B2)', () => {
     expect(parseHead('<html><head><meta name="a" content="b"></head></html>', page).title).toBeNull()
   })

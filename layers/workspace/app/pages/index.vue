@@ -9,23 +9,27 @@ const route = useRoute()
 const router = useRouter()
 const requestUrl = useRequestURL()
 const meta = useMetaState()
-const { extract, retry, pending, error } = useExtract()
+const { extract, retry, pending, error, lastRender } = useExtract()
 const { view, mode, inspectorOpen, loadRecent, remember } = useWorkspace()
 const { summary } = useChecks()
 const { show } = useToast()
 const { request: focusRequest } = useFieldFocus()
+const { helpOpen } = useWorkspaceShortcuts()
 
 const queryUrl = () => (typeof route.query.url === 'string' ? route.query.url : '')
+const queryRender = () => route.query.render === '1'
 const urlInput = ref(queryUrl())
 
-async function lookup(input: string, options: { refresh?: boolean, updateUrl?: boolean } = {}) {
-  const result = await extract(input, options)
+async function lookup(input: string, options: { refresh?: boolean, render?: boolean, updateUrl?: boolean } = {}) {
+  const render = options.render ?? lastRender.value
+  const result = await extract(input, { refresh: options.refresh, render })
   if (result) {
     mode.value = 'page'
     urlInput.value = result.requestedUrl
     if (import.meta.client) remember(result.requestedUrl)
-    if (options.updateUrl !== false && queryUrl() !== result.requestedUrl) {
-      await router.replace({ query: { url: result.requestedUrl } })
+    const query = render ? { url: result.requestedUrl, render: '1' } : { url: result.requestedUrl }
+    if (options.updateUrl !== false && (queryUrl() !== result.requestedUrl || queryRender() !== render)) {
+      await router.replace({ query })
     }
   }
   else if (error.value && import.meta.client) {
@@ -52,12 +56,13 @@ function startScratch() {
 
 // FR-1.2: /?url= loads on entry, on the server too, so shared links render with results.
 // FR-1.5: otherwise show MetaCheck's own tags.
-if (queryUrl() && !meta.source.value) await lookup(queryUrl(), { updateUrl: false })
+if (queryUrl() && !meta.source.value) await lookup(queryUrl(), { render: queryRender(), updateUrl: false })
 else if (!queryUrl() && mode.value === 'demo' && !meta.fetched.value) meta.load(demoValues(requestUrl.origin))
 
 // Back/forward between lookups.
-watch(() => route.query.url, (url) => {
-  if (typeof url === 'string' && url && url !== meta.source.value?.requestedUrl) lookup(url, { updateUrl: false })
+watch(() => [route.query.url, route.query.render], ([url]) => {
+  const changed = url !== meta.source.value?.requestedUrl || queryRender() !== !!meta.source.value?.rendering
+  if (typeof url === 'string' && url && changed) lookup(url, { render: queryRender(), updateUrl: false })
 })
 
 // Phones show one view at a time; "Edit" exists only there. Tablets use the inspector instead.
@@ -83,11 +88,11 @@ watch(focusRequest, (req) => {
 })
 
 const views = computed(() => [
-  { value: 'edit' as const, label: 'Edit', icon: 'lucide:pencil', class: 'md:hidden' },
-  { value: 'preview' as const, label: 'Preview', icon: 'lucide:eye' },
-  { value: 'checks' as const, label: 'Checks', icon: 'lucide:list-checks', badge: summary.value.errors.length || undefined },
-  { value: 'tags' as const, label: 'Tags', icon: 'lucide:tags' },
-  { value: 'code' as const, label: 'Code', icon: 'lucide:code' },
+  { value: 'edit' as const, label: 'Edit', icon: 'lucide:pencil', class: 'md:hidden', shortcut: 'E' },
+  { value: 'preview' as const, label: 'Preview', icon: 'lucide:eye', shortcut: '1' },
+  { value: 'checks' as const, label: 'Checks', icon: 'lucide:list-checks', badge: summary.value.errors.length || undefined, shortcut: '2' },
+  { value: 'tags' as const, label: 'Tags', icon: 'lucide:tags', shortcut: '3' },
+  { value: 'code' as const, label: 'Code', icon: 'lucide:code', shortcut: '4' },
 ])
 const contentView = computed(() => (view.value === 'edit' ? 'preview' : view.value))
 
@@ -111,6 +116,7 @@ useSeoMeta({
         class="mb-5"
         @retry="retry()"
         @refresh="retry({ refresh: true })"
+        @render="lookup(meta.source.value!.requestedUrl, { render: $event })"
         @scratch="startScratch"
         @pick="lookup($event)"
       />
@@ -154,6 +160,18 @@ useSeoMeta({
             <div class="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none]">
               <CoreSegmentedControl v-model="view" :options="views" label="View" />
             </div>
+            <CoreButton
+              size="sm"
+              variant="ghost"
+              icon="lucide:keyboard"
+              icon-only
+              title="Keyboard shortcuts (?)"
+              aria-keyshortcuts="?"
+              class="hidden lg:inline-flex"
+              @click="helpOpen = true"
+            >
+              Keyboard shortcuts
+            </CoreButton>
           </div>
 
           <div :class="['transition-opacity duration-[var(--duration-base)]', pending && 'pointer-events-none opacity-60']" :aria-busy="pending">
@@ -169,6 +187,7 @@ useSeoMeta({
         </div>
       </div>
     </div>
+    <WorkspaceShortcuts v-model:open="helpOpen" />
   </NuxtLayout>
 </template>
 

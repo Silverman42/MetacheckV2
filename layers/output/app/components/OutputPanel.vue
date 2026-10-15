@@ -1,13 +1,8 @@
 <script setup lang="ts">
-import { FORMATS, generate, getFormat, type OutputFormat } from '#layers/output/shared/utils/formats'
+import { FORMATS } from '#layers/output/shared/utils/formats'
 
 // The Code view (FR-7.x): pick a format, copy or download the tags for the edited values.
-const { draft } = useMetaState()
-const format = useState<OutputFormat>('mc-output-format', () => 'html')
-const comments = useState('mc-output-comments', () => true)
-
-const info = computed(() => getFormat(format.value))
-const code = computed(() => generate(draft.value, format.value, { comments: comments.value }))
+const { format, comments, info, code } = useOutputCode()
 // Shiki escapes the code it highlights, so this HTML is safe to render.
 const highlighted = useHighlighter(code, computed(() => info.value.lang))
 

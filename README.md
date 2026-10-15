@@ -26,4 +26,15 @@ npm run lint
 npm run build        # Netlify output; NITRO_PRESET=node-server for a local server
 ```
 
+## Configuration
+
+| Variable | Purpose |
+|---|---|
+| `NUXT_PUBLIC_REPO_URL` | GitHub link in the header and About page (hidden when empty) |
+| `NUXT_EXTRACT_RENDERER_URL`, `NUXT_EXTRACT_RENDERER_TOKEN` | Optional Browserless-compatible service for "Render JavaScript" |
+| `NUXT_PUBLIC_JS_RENDERING=true` | Show the "Render JavaScript" switch (set with the renderer) |
+| `NUXT_EXTRACT_INTERNAL_TOKEN` | Fixed token for in-process SSR calls (otherwise generated per build) |
+
+Keyboard: `/` or ⌘K focuses the URL field, `1`–`4` switch views, `E` shows the editor, `C` copies the code, `?` lists shortcuts.
+
 Claude Code hooks in `.claude/` enforce the module rules: layers, motion, required design skills and a Lighthouse floor of 90 (PRD §9.11).
