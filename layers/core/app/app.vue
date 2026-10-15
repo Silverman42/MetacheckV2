@@ -16,8 +16,10 @@ useSeoMeta({
   ogTitle: 'MetaCheck — preview and fix your link’s meta tags',
   ogDescription: description,
   ogUrl: () => siteUrl + route.path,
-  ogImage: `${siteUrl}/og-image.png`,
-  ogImageAlt: 'MetaCheck showing link previews for several platforms',
+  ogImage: `${siteUrl}/og-image.jpg`,
+  ogImageAlt: 'The MetaCheck logo',
+  ogImageWidth: 1200,
+  ogImageHeight: 630,
   twitterCard: 'summary_large_image',
 })
 </script>

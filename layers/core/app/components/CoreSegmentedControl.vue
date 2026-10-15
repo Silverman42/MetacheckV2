@@ -3,7 +3,7 @@ import { TabsIndicator, TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 
 // §9.10.6: pill track, sliding selection indicator, ARIA tabs semantics and keyboard support.
 defineProps<{
-  options: { value: T, label: string, icon?: string, badge?: number }[]
+  options: { value: T, label: string, icon?: string, badge?: number, class?: string }[]
   label: string
   size?: 'sm' | 'md'
   iconOnly?: boolean
@@ -28,6 +28,7 @@ const model = defineModel<T>({ required: true })
         :aria-label="iconOnly ? option.label : undefined"
         :title="iconOnly ? option.label : undefined"
         :class="[
+          option.class,
           'relative z-10 inline-flex items-center justify-center gap-1.5 rounded-full font-medium',
           'text-muted transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)]',
           'hover:text-fg data-[state=active]:text-fg',

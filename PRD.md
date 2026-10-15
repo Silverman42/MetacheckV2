@@ -416,7 +416,7 @@ v1's per-request headless Chromium is the main cost and reliability problem. v2:
 2. **Optional: JS rendering (FR-1.7, P2)** through a hosted headless browser service (e.g. Browserless) called from the Netlify Function, or `@sparticuz/chromium` inside the function if it fits Netlify's function size and timeout limits. Behind a flag, with strict timeouts. When results differ from the plain fetch, tell the user: "social platforms will not see these tags".
 
 ### 9.3 API contract (internal)
-`GET /api/extract?url=<encoded>` — consumed only by the MetaCheck UI; not a public API (decision D7).
+`GET /api/extract?url=<encoded>[&refresh=1]` — consumed only by the MetaCheck UI; not a public API (decision D7). `refresh=1` skips the 10-minute cache.
 
 ```ts
 type ExtractResponse = {
@@ -661,7 +661,8 @@ The v2 repository ships Claude Code hooks (`.claude/settings.json`, scripts in `
 - Module code can only be written inside `layers/<module>/` (§9.1).
 - Module code can only be written after the Apple Design and Taste UI skills have been used in the session, alongside §9.10.
 - Every interactive `.vue` component must have a subtle transition or animation (no longer than 400 ms) that respects reduced motion (§9.10.1).
-- A turn that changes app code ends only when Lighthouse (mobile) scores at least 90 in Performance, Accessibility, Best Practices and SEO. This is the floor while building; the launch target in §9.5 and §11 stays at 95.
+- A turn that changes app code ends only when Lighthouse (mobile) scores at least 90 in Performance, Accessibility, Best Practices and SEO on `/`, `/guide` and `/about`. This is the floor while building; the launch target in §9.5 and §11 stays at 95.
+- The local Lighthouse build uses Nitro's `node-server` preset. A core-layer Nitro plugin compresses HTML for that preset only, and static assets ship pre-compressed, so local scores reflect Netlify, which compresses at the edge.
 
 ---
 
@@ -725,6 +726,21 @@ All questions from rev. 1 are resolved (2026-10-15).
 | D7 | Public API | **Internal to the app** | FR-8.6 rewritten; same-origin checks and rate limiting in §9.4; listed as a non-goal. |
 | D8 | Visual design | **Keep the v1 colour scheme; modernise the UI; add light and dark mode** | New §9.10 design system; FR-8.1 and FR-4.6 strengthened; goal 8 added. |
 | D9 | Code structure | **Each module in its own Nuxt layer** under `layers/` | §9.1 rewritten around nine layers with dependency rules; tests, design tokens and release phases mapped to layers. Enforced by the project's Claude Code hooks (§9.11). |
+
+### Implementation decisions (v2.0 build)
+
+| # | Topic | Decision | Why |
+|---|---|---|---|
+| D10 | What Checks evaluate | Three modes: **live** (the fetched page's real tags, until you edit), **edited** (the tags MetaCheck would generate from your edits), **draft** (writing from scratch). Page-level rules (lang, viewport, duplicates, `property=` on X tags) always read the fetched page. | Before editing, checks must describe the page as it is; after editing, they show whether the code you copy fixes it (FR-5.5). |
+| D11 | X tags in output | `twitter:card`, `twitter:site`, `twitter:creator` and `twitter:image:alt` are always written; `twitter:title`/`description`/`image` only when they differ from Open Graph. | X falls back to `og:*`, so duplicates add weight without changing anything (FR-7.3). |
+| D12 | One tag list | `buildTags()` in the core layer turns editor values into tags; both the output and checks layers use it. | Code and checks can never disagree about which tags exist. |
+| D13 | First visit | The demo shows MetaCheck's own tags, built locally rather than fetched. | Instant first paint and no network dependency for `/` (FR-1.5, §9.5). |
+| D14 | Tablet layout | Below 1280 px the editor is an inspector toggled from the toolbar; below 768 px it is the **Edit** view. | Matches §9.10.5 while keeping one editor component. |
+| D15 | Platform colours in previews | Previews use each platform's colours, darkened where the original grey fails WCAG AA on its own surface (Bluesky, Threads, WhatsApp, iMessage, Pinterest placeholder). | §9.8 requires AA in both themes, previews included. |
+| D16 | Code highlighting | Shiki core with only HTML, TypeScript, TSX and JSON grammars and two themes built from the palette, loaded in the browser on first use of the Code view. | Stock themes failed AA on the code background; loading on demand keeps it off the critical path. |
+| D17 | Extraction cache | Nitro cached function keyed by normalised URL, 10-minute TTL, no stale-while-revalidate; Netlify Blobs on Netlify, default storage elsewhere. No CDN caching of the API. | Refresh must return fresh data; CDN caching would bypass the same-origin check (D7). |
+| D18 | Rate limit | 30 requests/minute per IP, in-memory sliding window per instance; in-process SSR calls are exempt. | A burst bound that needs no extra service; platform-level limits remain the hard cap (§9.4). |
+| D19 | Test runner | Vitest 4.1 (not 5) with `@nuxt/test-utils` 4.3. | Component tests fail to load under Vitest 5 with the current test-utils. |
 
 ---
 

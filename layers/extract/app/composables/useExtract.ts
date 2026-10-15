@@ -19,7 +19,8 @@ export function useExtract() {
 
   let latest = 0
 
-  async function extract(input: string): Promise<ExtractResponse | null> {
+  /** `refresh` skips the server's short-lived cache. */
+  async function extract(input: string, options: { refresh?: boolean } = {}): Promise<ExtractResponse | null> {
     const target = normalizeTargetUrl(input)
     if (!target.ok) {
       error.value = { statusCode: 400, code: 'INVALID_URL', message: target.reason }
@@ -31,7 +32,8 @@ export function useExtract() {
     error.value = null
     lastUrl.value = target.url
     try {
-      const response = await $fetch<ExtractResponse>('/api/extract', { query: { url: target.url }, headers })
+      const query = options.refresh ? { url: target.url, refresh: '1' } : { url: target.url }
+      const response = await $fetch<ExtractResponse>('/api/extract', { query, headers })
       if (request !== latest) return null // a newer lookup started; drop this one
       meta.load(toMetaValues(response), response)
       return response
@@ -50,8 +52,8 @@ export function useExtract() {
   }
 
   /** Run the last lookup again (the Retry action). */
-  function retry() {
-    return lastUrl.value ? extract(lastUrl.value) : Promise.resolve(null)
+  function retry(options: { refresh?: boolean } = {}) {
+    return lastUrl.value ? extract(lastUrl.value, options) : Promise.resolve(null)
   }
 
   return {

@@ -30,3 +30,18 @@ export function cloneMeta(values: MetaValues): MetaValues {
   // JSON rather than structuredClone: works on Vue reactive proxies and every field is plain data.
   return JSON.parse(JSON.stringify(values)) as MetaValues
 }
+
+export type MetaPlatform = 'og' | 'twitter'
+
+/**
+ * The values a platform actually gets (FR-3.1, FR-3.6): its override where set, else the base.
+ * X falls back to Open Graph tags before the base, as X's crawler does.
+ */
+export function resolveMeta(values: MetaValues, platform: MetaPlatform): Pick<MetaOverride, 'title' | 'description' | 'image'> {
+  const { base, overrides } = values
+  const pick = (key: 'title' | 'description' | 'image') =>
+    overrides[platform][key]
+    || (platform === 'twitter' ? overrides.og[key] : '')
+    || base[key]
+  return { title: pick('title'), description: pick('description'), image: pick('image') }
+}

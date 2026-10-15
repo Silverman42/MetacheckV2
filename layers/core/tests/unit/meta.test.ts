@@ -18,3 +18,15 @@ describe('meta helpers', () => {
     expect(original.overrides.og.image).toBe('')
   })
 })
+
+describe('resolveMeta', () => {
+  it('uses the platform override, then (for X) Open Graph, then the base', async () => {
+    const { resolveMeta } = await import('../../shared/utils/meta')
+    const values = createEmptyMeta()
+    values.base = { title: 'Base', description: 'Base desc', image: 'https://a.test/base.png', url: '' }
+    values.overrides.og.title = 'OG title'
+    values.overrides.twitter.description = 'X desc'
+    expect(resolveMeta(values, 'og')).toEqual({ title: 'OG title', description: 'Base desc', image: 'https://a.test/base.png' })
+    expect(resolveMeta(values, 'twitter')).toEqual({ title: 'OG title', description: 'X desc', image: 'https://a.test/base.png' })
+  })
+})

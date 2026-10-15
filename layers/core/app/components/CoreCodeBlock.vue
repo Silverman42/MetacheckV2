@@ -1,7 +1,13 @@
 <script setup lang="ts">
 // §9.10.6 code block shell. Highlighting (Shiki) is added by the output layer through the default slot;
 // without it the plain code is shown. Copy confirms for 1.5 s and announces through a live region.
-const props = defineProps<{ code: string, label?: string }>()
+const props = defineProps<{
+  code: string
+  label?: string
+  /** Offer a Download button that saves the code under this name (FR-7.5). */
+  filename?: string
+  mime?: string
+}>()
 
 const copied = ref(false)
 let timer: ReturnType<typeof setTimeout> | undefined
@@ -19,12 +25,25 @@ async function copy() {
   }
 }
 onBeforeUnmount(() => clearTimeout(timer))
+
+defineExpose({ copy })
+
+function download() {
+  const url = URL.createObjectURL(new Blob([props.code], { type: props.mime ?? 'text/plain' }))
+  const link = Object.assign(document.createElement('a'), { href: url, download: props.filename })
+  link.click()
+  setTimeout(() => URL.revokeObjectURL(url), 0)
+}
 </script>
 
 <template>
   <div class="group relative overflow-hidden rounded-card bg-inset ring-1 ring-line">
-    <div class="flex items-center justify-between gap-3 border-b border-line px-4 py-2">
+    <div class="flex items-center gap-1 border-b border-line px-4 py-2">
       <span class="text-footnote text-muted">{{ label ?? 'Code' }}</span>
+      <span class="flex-1" />
+      <CoreButton v-if="filename" size="sm" variant="ghost" icon="lucide:download" @click="download">
+        Download
+      </CoreButton>
       <CoreButton
         size="sm"
         variant="ghost"
@@ -37,7 +56,7 @@ onBeforeUnmount(() => clearTimeout(timer))
       </CoreButton>
     </div>
     <div class="overflow-x-auto p-4 font-mono text-code text-fg">
-      <slot><pre class="m-0"><code>{{ code }}</code></pre></slot>
+      <slot><pre class="m-0 whitespace-pre"><code>{{ code }}</code></pre></slot>
     </div>
     <span class="sr-only" aria-live="polite">{{ copied ? 'Copied to clipboard' : '' }}</span>
   </div>

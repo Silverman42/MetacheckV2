@@ -12,6 +12,14 @@ export default defineNuxtConfig({
       probeTimeoutMs: 3000,
       maxHtmlBytes: 1_500_000,
       maxImages: 4,
+      // Requests per minute per IP (§9.4).
+      rateLimit: 30,
     },
   },
+
+  // On Netlify the extraction cache lives in Netlify Blobs so all function instances share it;
+  // elsewhere (dev, local preview) Nitro's default storage is used.
+  nitro: process.env.NETLIFY
+    ? { storage: { cache: { driver: 'netlify-blobs', name: 'metacheck-cache' } } }
+    : {},
 })

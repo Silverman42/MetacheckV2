@@ -25,7 +25,7 @@
   "lighthouse": {
     "minScore": 90,
     "categories": ["performance", "accessibility", "best-practices", "seo"],
-    "paths": ["/"],
+    "paths": ["/", "/guide", "/about"],
     "formFactor": "mobile",
     "lighthouseVersion": "12.6.0",
     "watch": ["layers", "app", "server", "shared", "public", "nuxt.config.ts", "app.config.ts", "package.json"],

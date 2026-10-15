@@ -14,9 +14,20 @@ export default defineNuxtConfig({
     },
   },
 
-  // PRD §9.1.2: "/" stays server-rendered so ?url= share links get previews.
-  // Add `'/guide': { prerender: true }` and `'/about': { prerender: true }` when the docs layer ships.
-  routeRules: {},
+  // PRD §9.1.2: prerender docs pages; "/" stays server-rendered so ?url= share links get previews.
+  routeRules: {
+    '/guide': { prerender: true },
+    '/about': { prerender: true },
+    // §9.4: baseline security headers for every response.
+    '/**': {
+      headers: {
+        'x-content-type-options': 'nosniff',
+        'referrer-policy': 'strict-origin-when-cross-origin',
+        'x-frame-options': 'DENY',
+        'permissions-policy': 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+      },
+    },
+  },
 
   nitro: {
     preset: 'netlify',
