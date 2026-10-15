@@ -26,7 +26,12 @@ export interface ExtractedJsonLd {
 }
 
 export interface ExtractedImage {
+  /** Absolute URL, resolved against the final page URL (FR-2.6). */
   url: string
+  /** The tag it came from, e.g. og:image or twitter:image. */
+  tag: string
+  /** True when the page used a relative URL, which platforms reject. */
+  relative: boolean
   ok: boolean
   status?: number
   contentType?: string
@@ -53,13 +58,19 @@ export interface ExtractResponse {
 export type ExtractErrorCode =
   | 'INVALID_URL'
   | 'BLOCKED_ADDRESS'
+  | 'DNS_ERROR'
   | 'TIMEOUT'
   | 'NOT_HTML'
+  | 'HTTP_ERROR'
+  | 'TOO_MANY_REDIRECTS'
   | 'UPSTREAM_ERROR'
   | 'RATE_LIMITED'
+  | 'FORBIDDEN'
 
 export interface ExtractError {
   statusCode: number
   code: ExtractErrorCode
   message: string
+  /** The target's HTTP status, for HTTP_ERROR. */
+  upstreamStatus?: number
 }

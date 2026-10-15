@@ -433,11 +433,27 @@ type ExtractResponse = {
   links: { rel: string; href: string; resolvedHref: string;
            sizes?: string; type?: string; hreflang?: string }[]
   jsonLd: { raw: string; parsed?: unknown; error?: string }[]
-  images: { url: string; ok: boolean; status?: number; contentType?: string;
+  images: { url: string; tag: string; relative: boolean; ok: boolean;
+            status?: number; contentType?: string;
             bytes?: number; width?: number; height?: number }[]
 }
 ```
-Errors use one shape `{ statusCode, code, message }` with codes such as `INVALID_URL`, `BLOCKED_ADDRESS`, `TIMEOUT`, `NOT_HTML`, `UPSTREAM_ERROR`, `RATE_LIMITED`. Validation errors return **400** (fixes B5). Validate input with a schema library (e.g. Zod or Valibot).
+`images` has one entry per image tag (`og:image`, `twitter:image`, …); `url` is resolved against the final URL and `relative` flags pages that used a relative path (FR-2.6). Each distinct URL is probed once.
+
+Errors use one shape `{ statusCode, code, message, upstreamStatus? }`:
+
+| Code | HTTP | When |
+|---|---|---|
+| `INVALID_URL` | 400 | Missing, malformed, non-http(s) or credentialed URL |
+| `BLOCKED_ADDRESS` | 400 | Non-standard port, or the host is or resolves to a private/reserved address |
+| `FORBIDDEN` | 403 | Caller is not the MetaCheck app (§9.4) |
+| `NOT_HTML` | 422 | The response is not an HTML page |
+| `RATE_LIMITED` | 429 | Too many requests (phase 2) |
+| `DNS_ERROR` | 502 | The domain does not resolve |
+| `HTTP_ERROR` | 502 | The target answered 4xx/5xx (`upstreamStatus` carries it) |
+| `TOO_MANY_REDIRECTS` | 502 | More than 5 redirects |
+| `UPSTREAM_ERROR` | 502 | Connection failed or anything unexpected |
+| `TIMEOUT` | 504 | Page fetch over 6 s (image probes 3 s each, so the function stays inside Netlify's 10 s limit) | Validation errors return **400** (fixes B5). Validate input with a schema library (e.g. Zod or Valibot).
 
 ### 9.4 Security
 - **SSRF guard** (fixes B4): allow only `http`/`https` on ports 80/443; resolve DNS and reject loopback, private, link-local, CGNAT and cloud metadata ranges (IPv4 and IPv6); re-check on every redirect; cap redirects (5).
